@@ -4,7 +4,6 @@ import (
 	"net/http"
 )
 
-func HomeHandler(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusOK)
+func HomeHandler(_ http.ResponseWriter, _ *http.Request) {
 	return
 }
