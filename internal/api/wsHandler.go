@@ -91,6 +91,23 @@ func WsHandler(w http.ResponseWriter, r *http.Request) {
 				response["Result"] = err == nil
 				break
 
+			case "LeaveRoom":
+				roomIdStr, ok := msg["RoomId"].(string)
+				if !ok {
+					response["Error"] = "No room name"
+					break
+				}
+
+				roomId, err := uuid.Parse(roomIdStr)
+				if err != nil {
+					response["Error"] = err
+					break
+				}
+
+				err = core.LeaveRoom(playerId, roomId)
+				response["Result"] = err == nil
+				break
+
 			default:
 				if err != nil {
 					log.Err(err)

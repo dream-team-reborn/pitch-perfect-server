@@ -16,11 +16,13 @@ var roomsMutex sync.Mutex
 
 const (
 	Joined uint = iota
+	Leave
 )
 
 type RoomCmd struct {
-	Type   uint
-	Player entities.Player
+	Type     uint
+	PlayerId uuid.UUID
+	Player   entities.Player
 }
 
 func InitRooms() error {
@@ -38,7 +40,7 @@ func InitRooms() error {
 			}
 			c := make(chan RoomCmd)
 			roomsIndex[room.ID] = c
-			go roomCycle(c)
+			go roomCycle(*room, c)
 			return
 		})
 
@@ -71,7 +73,7 @@ func CreateRoom(creatorId uuid.UUID, name string) (uuid.UUID, error) {
 	}
 	roomsIndex[room.ID] = c
 
-	go roomCycle(c)
+	go roomCycle(room, c)
 
 	return room.ID, nil
 }
@@ -114,6 +116,26 @@ func JoinRoom(joinerId uuid.UUID, roomId uuid.UUID) error {
 	return nil
 }
 
+func LeaveRoom(leaverId uuid.UUID, roomId uuid.UUID) error {
+	var room entities.Room
+	tx := database.Db.Preload("Players").First(&room, roomId)
+	if tx.Error != nil {
+		return tx.Error
+	}
+
+	newPlayers := deleteElement(room.Players, leaverId)
+	room.Players = newPlayers
+
+	c, err := GetChannelByRoom(roomId)
+	if err != nil {
+		return err
+	}
+
+	*c <- RoomCmd{Type: Leave, PlayerId: leaverId}
+
+	return nil
+}
+
 func GetChannelByRoom(roomId uuid.UUID) (*chan RoomCmd, error) {
 	roomsMutex.Lock()
 	defer roomsMutex.Unlock()
@@ -142,9 +164,55 @@ func uniqueSliceElements[T comparable](inputSlice []T) ([]T, bool) {
 	return uniqueSlice, onlyUnique
 }
 
-func roomCycle(c chan RoomCmd) {
+func deleteElement(players []entities.Player, elem uuid.UUID) []entities.Player {
+	result := make([]entities.Player, 0, len(players)-1)
+	for _, player := range players {
+		if player.ID != elem {
+			result = append(result, player)
+		}
+	}
+	return result
+}
+
+func roomCycle(room entities.Room, c chan RoomCmd) {
 	for {
 		Cmd := <-c
+
+		switch Cmd.Type {
+		case Joined:
+			joiner := Cmd.Player
+			iter.ForEach(room.Players, func(player *entities.Player) {
+				playersMutex.Lock()
+				defer playersMutex.Unlock()
+
+				chl, ok := playersIndex[player.ID]
+				if ok {
+					chl <- PlayerEvent{Type: RoomJoined, Player: joiner}
+				}
+			})
+
+			newPlayers := append(room.Players, joiner)
+			newPlayers, _ = uniqueSliceElements(newPlayers)
+			room.Players = newPlayers
+			break
+		case Leave:
+			leaver := Cmd.PlayerId
+			newPlayers := deleteElement(room.Players, leaver)
+			room.Players = newPlayers
+			iter.ForEach(room.Players, func(player *entities.Player) {
+				playersMutex.Lock()
+				defer playersMutex.Unlock()
+
+				chl, ok := playersIndex[player.ID]
+				if ok {
+					chl <- PlayerEvent{Type: RoomLeave, PlayerId: leaver}
+				}
+			})
+			break
+		default:
+			break
+		}
+
 		jj, err := json.Marshal(Cmd)
 		if err != nil {
 			log.Err(err)
