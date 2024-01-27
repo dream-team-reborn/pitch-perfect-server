@@ -26,11 +26,13 @@ func WsHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err = core.AddPlayerConnection(playerId)
+	eventChannel, err := core.AddPlayerConnection(playerId)
 	if err != nil {
 		log.Error().AnErr("add_connection", err)
 		return
 	}
+
+	go listenEventChannel(eventChannel, socket)
 
 	for {
 		mt, bytes, err := socket.ReadMessage()
@@ -43,6 +45,8 @@ func WsHandler(w http.ResponseWriter, r *http.Request) {
 		if err := json.Unmarshal(bytes, &msg); err != nil {
 			panic(err)
 		}
+
+		log.Info().Interface("msg", msg).Send()
 
 		msgType, ok := msg["Type"]
 		if ok {
@@ -89,6 +93,7 @@ func WsHandler(w http.ResponseWriter, r *http.Request) {
 
 				err = core.JoinRoom(playerId, roomId)
 				response["Result"] = err == nil
+
 				break
 
 			case "LeaveRoom":
@@ -134,4 +139,29 @@ func WsHandler(w http.ResponseWriter, r *http.Request) {
 func checkToken(r *http.Request) (uuid.UUID, error) {
 	token := r.URL.Query().Get("token")
 	return auth.CheckToken(token)
+}
+
+func listenEventChannel(c *chan core.PlayerEvent, socket *websocket.Conn) {
+	for {
+		if socket == nil {
+			break
+		}
+
+		if *c == nil {
+			break
+		}
+
+		event := <-*c
+
+		response := make(map[string]interface{})
+		switch event.Type {
+		case core.RoomJoined:
+			response["Type"] = "RoomJoined"
+			response["Player"] = event.Player
+		case core.RoomLeaved:
+			response["Type"] = "RoomLeaved"
+			response["PlayerId"] = event.PlayerId
+		}
+
+	}
 }

@@ -12,7 +12,7 @@ var playersMutex sync.Mutex
 
 const (
 	RoomJoined uint = iota
-	RoomLeave
+	RoomLeaved
 )
 
 type PlayerEvent struct {
@@ -37,6 +37,7 @@ func GetPlayer(id uuid.UUID) (entities.Player, error) {
 
 func AddPlayerConnection(id uuid.UUID) (*chan PlayerEvent, error) {
 	playersMutex.Lock()
+	defer playersMutex.Unlock()
 	if playersIndex == nil {
 		playersIndex = make(map[uuid.UUID]chan PlayerEvent)
 	}
@@ -46,6 +47,5 @@ func AddPlayerConnection(id uuid.UUID) (*chan PlayerEvent, error) {
 	}
 	c = make(chan PlayerEvent)
 	playersIndex[id] = c
-	playersMutex.Unlock()
 	return &c, nil
 }

@@ -205,7 +205,7 @@ func roomCycle(room entities.Room, c chan RoomCmd) {
 
 				chl, ok := playersIndex[player.ID]
 				if ok {
-					chl <- PlayerEvent{Type: RoomLeave, PlayerId: leaver}
+					chl <- PlayerEvent{Type: RoomLeaved, PlayerId: leaver}
 				}
 			})
 			break
