@@ -6,9 +6,10 @@ import (
 	"net/http"
 )
 
-var addr = flag.String("addr", "localhost:8080", "api service address")
+var addr = flag.String("addr", "0.0.0.0:8080", "api service address")
 
 func Serve() {
+	http.HandleFunc("/", HomeHandler)
 	http.HandleFunc("/ws", WsHandler)
 	http.HandleFunc("/login", LoginHandler)
 
