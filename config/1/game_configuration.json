@@ -1,0 +1,345 @@
+{
+    "localization_keys": [
+        "phrases_$",
+        "words_$",
+        "category_$"
+    ],
+    "phrases": [
+        {
+            "id": 1,
+            "placeholdersAmount": 2
+        },
+        {
+            "id": 2,
+            "placeholdersAmount": 1
+        },
+        {
+            "id": 3,
+            "placeholdersAmount": 1
+        },
+        {
+            "id": 4,
+            "placeholdersAmount": 3
+        },
+        {
+            "id": 5,
+            "placeholdersAmount": 1
+        },
+        {
+            "id": 6,
+            "placeholdersAmount": 1
+        },
+        {
+            "id": 7,
+            "placeholdersAmount": 1
+        },
+        {
+            "id": 8,
+            "placeholdersAmount": 1
+        },
+        {
+            "id": 9,
+            "placeholdersAmount": 2
+        },
+        {
+            "id": 10,
+            "placeholdersAmount": 1
+        },
+        {
+            "id": 11,
+            "placeholdersAmount": 2
+        },
+        {
+            "id": 12,
+            "placeholdersAmount": 2
+        },
+        {
+            "id": 13,
+            "placeholdersAmount": 2
+        },
+        {
+            "id": 14,
+            "placeholdersAmount": 1
+        },
+        {
+            "id": 15,
+            "placeholdersAmount": 2
+        },
+        {
+            "id": 16,
+            "placeholdersAmount": 1
+        },
+        {
+            "id": 17,
+            "placeholdersAmount": 2
+        },
+        {
+            "id": 18,
+            "placeholdersAmount": 1
+        },
+        {
+            "id": 19,
+            "placeholdersAmount": 2
+        },
+        {
+            "id": 20,
+            "placeholdersAmount": 2
+        }
+    ],
+    "words": [
+        {
+            "id": 1,
+            "categoryId": 4
+        },
+        {
+            "id": 2,
+            "categoryId": 2
+        },
+        {
+            "id": 3,
+            "categoryId": 4
+        },
+        {
+            "id": 4,
+            "categoryId": 4
+        },
+        {
+            "id": 5,
+            "categoryId": 1
+        },
+        {
+            "id": 6,
+            "categoryId": 4
+        },
+        {
+            "id": 7,
+            "categoryId": 2
+        },
+        {
+            "id": 8,
+            "categoryId": 4
+        },
+        {
+            "id": 9,
+            "categoryId": 4
+        },
+        {
+            "id": 10,
+            "categoryId": 2
+        },
+        {
+            "id": 11,
+            "categoryId": 1
+        },
+        {
+            "id": 12,
+            "categoryId": 3
+        },
+        {
+            "id": 13,
+            "categoryId": 4
+        },
+        {
+            "id": 14,
+            "categoryId": 2
+        },
+        {
+            "id": 15,
+            "categoryId": 2
+        },
+        {
+            "id": 16,
+            "categoryId": 3
+        },
+        {
+            "id": 17,
+            "categoryId": 3
+        },
+        {
+            "id": 18,
+            "categoryId": 3
+        },
+        {
+            "id": 19,
+            "categoryId": 3
+        },
+        {
+            "id": 20,
+            "categoryId": 1
+        },
+        {
+            "id": 21,
+            "categoryId": 2
+        },
+        {
+            "id": 22,
+            "categoryId": 3
+        },
+        {
+            "id": 23,
+            "categoryId": 1
+        },
+        {
+            "id": 24,
+            "categoryId": 4
+        },
+        {
+            "id": 25,
+            "categoryId": 3
+        },
+        {
+            "id": 26,
+            "categoryId": 4
+        },
+        {
+            "id": 27,
+            "categoryId": 4
+        },
+        {
+            "id": 28,
+            "categoryId": 1
+        },
+        {
+            "id": 29,
+            "categoryId": 2
+        },
+        {
+            "id": 30,
+            "categoryId": 1
+        },
+        {
+            "id": 31,
+            "categoryId": 2
+        },
+        {
+            "id": 32,
+            "categoryId": 4
+        },
+        {
+            "id": 33,
+            "categoryId": 2
+        },
+        {
+            "id": 34,
+            "categoryId": 4
+        },
+        {
+            "id": 35,
+            "categoryId": 3
+        },
+        {
+            "id": 36,
+            "categoryId": 4
+        },
+        {
+            "id": 37,
+            "categoryId": 3
+        },
+        {
+            "id": 38,
+            "categoryId": 3
+        },
+        {
+            "id": 39,
+            "categoryId": 4
+        },
+        {
+            "id": 40,
+            "categoryId": 1
+        },
+        {
+            "id": 41,
+            "categoryId": 1
+        },
+        {
+            "id": 42,
+            "categoryId": 1
+        },
+        {
+            "id": 43,
+            "categoryId": 4
+        },
+        {
+            "id": 44,
+            "categoryId": 1
+        },
+        {
+            "id": 45,
+            "categoryId": 2
+        },
+        {
+            "id": 46,
+            "categoryId": 2
+        },
+        {
+            "id": 47,
+            "categoryId": 2
+        },
+        {
+            "id": 48,
+            "categoryId": 1
+        },
+        {
+            "id": 49,
+            "categoryId": 2
+        },
+        {
+            "id": 50,
+            "categoryId": 2
+        },
+        {
+            "id": 51,
+            "categoryId": 2
+        },
+        {
+            "id": 52,
+            "categoryId": 1
+        },
+        {
+            "id": 53,
+            "categoryId": 1
+        },
+        {
+            "id": 54,
+            "categoryId": 3
+        },
+        {
+            "id": 55,
+            "categoryId": 1
+        },
+        {
+            "id": 56,
+            "categoryId": 1
+        },
+        {
+            "id": 57,
+            "categoryId": 3
+        },
+        {
+            "id": 58,
+            "categoryId": 3
+        },
+        {
+            "id": 59,
+            "categoryId": 3
+        },
+        {
+            "id": 60,
+            "categoryId": 3
+        }
+    ],
+    "categories": [
+        {
+            "id": 1
+        },
+        {
+            "id": 2
+        },
+        {
+            "id": 3
+        },
+        {
+            "id": 4
+        }
+    ]
+}
