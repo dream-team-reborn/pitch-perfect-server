@@ -74,6 +74,23 @@ func WsHandler(w http.ResponseWriter, r *http.Request) {
 				response["Rooms"] = rooms
 				break
 
+			case "JoinRoom":
+				roomIdStr, ok := msg["RoomId"].(string)
+				if !ok {
+					response["Error"] = "No room name"
+					break
+				}
+
+				roomId, err := uuid.Parse(roomIdStr)
+				if err != nil {
+					response["Error"] = err
+					break
+				}
+
+				err = core.JoinRoom(playerId, roomId)
+				response["Result"] = err == nil
+				break
+
 			default:
 				if err != nil {
 					log.Err(err)
@@ -93,6 +110,8 @@ func WsHandler(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 	}
+
+	log.Warn().Msg("Conn destroyed")
 }
 
 func checkToken(r *http.Request) (uuid.UUID, error) {
