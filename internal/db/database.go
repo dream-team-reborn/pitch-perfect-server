@@ -16,13 +16,10 @@ func Init() {
 	}
 
 	// Migrate the schema
-	err = db.AutoMigrate(&entities.Player{})
+	err = db.AutoMigrate(&entities.Player{}, &entities.Room{})
 	if err != nil {
-		log.Error().Msg("Impossible to migrate Player table")
-	}
-	err = db.AutoMigrate(&entities.Player{})
-	if err != nil {
-		log.Error().Msg("Impossible to migrate Room table")
+
+		log.Error().Msg("Impossible to migrate tables")
 	}
 
 	Db = *db

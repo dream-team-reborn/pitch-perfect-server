@@ -12,4 +12,5 @@ type Player struct {
 	UpdatedAt time.Time
 	DeletedAt gorm.DeletedAt `gorm:"index"`
 	Name      string
+	RoomId    uuid.UUID
 }

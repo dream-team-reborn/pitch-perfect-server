@@ -12,8 +12,8 @@ var secretKey = []byte("secret-key")
 func GenerateToken(playerId uuid.UUID) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256,
 		jwt.MapClaims{
-			"subject": playerId,
-			"exp":     time.Now().Add(time.Hour * 24).Unix(),
+			"sub": playerId.String(),
+			"exp": time.Now().Add(time.Hour * 24).Unix(),
 		})
 
 	tokenString, err := token.SignedString(secretKey)
