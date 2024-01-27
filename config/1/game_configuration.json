@@ -1,7 +1,7 @@
 {
     "localization_keys": [
-        "phrases_$",
-        "words_$",
+        "phrase_$",
+        "word_$",
         "category_$"
     ],
     "phrases": [
