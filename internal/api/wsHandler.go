@@ -46,7 +46,24 @@ func WsHandler(w http.ResponseWriter, r *http.Request) {
 
 		msgType, ok := msg["Type"]
 		if ok {
+			response := make(map[string]interface{})
+			response["Type"] = msgType
+
 			switch msgType {
+			case "CreateRoom":
+				roomName, ok := msg["RoomName"].(string)
+				if !ok {
+					response["Error"] = "No room name"
+					break
+				}
+
+				roomId, err := core.CreateRoom(playerId, roomName)
+				if err != nil {
+					response["Error"] = err
+				}
+
+				response["RoomId"] = roomId
+
 			case "GetRooms":
 				rooms, err := core.GetAllRooms()
 				if err != nil {
@@ -54,27 +71,25 @@ func WsHandler(w http.ResponseWriter, r *http.Request) {
 					break
 				}
 
-				response := make(map[string]interface{})
-				response["Type"] = msgType
 				response["Rooms"] = rooms
-
-				output, err := json.Marshal(response)
-				if err != nil {
-					log.Err(err)
-					break
-				}
-				err = socket.WriteMessage(mt, output)
-				if err != nil {
-					log.Err(err)
-					break
-				}
+				break
 
 			default:
-				err = socket.WriteMessage(mt, bytes)
 				if err != nil {
 					log.Err(err)
 					break
 				}
+			}
+
+			output, err := json.Marshal(response)
+			if err != nil {
+				log.Err(err)
+				break
+			}
+			err = socket.WriteMessage(mt, output)
+			if err != nil {
+				log.Err(err)
+				break
 			}
 		}
 	}

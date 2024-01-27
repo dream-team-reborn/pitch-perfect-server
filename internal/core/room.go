@@ -26,7 +26,7 @@ func CreateRoom(creatorId uuid.UUID, name string) (uuid.UUID, error) {
 	var players []entities.Player
 	players = append(players, creator)
 
-	room := entities.Room{ID: id, Players: players}
+	room := entities.Room{ID: id, Name: name, Players: players}
 	database.Db.Create(&room)
 
 	var c chan string
