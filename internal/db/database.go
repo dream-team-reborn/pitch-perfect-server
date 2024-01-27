@@ -16,7 +16,7 @@ func Init() {
 	}
 
 	// Migrate the schema
-	err = db.AutoMigrate(&entities.Player{}, &entities.Room{})
+	err = db.AutoMigrate(&entities.Player{}, &entities.Room{}, &entities.Category{}, &entities.Word{}, &entities.Phrase{})
 	if err != nil {
 
 		log.Error().Msg("Impossible to migrate tables")

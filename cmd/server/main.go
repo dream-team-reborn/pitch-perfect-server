@@ -10,6 +10,7 @@ import (
 func main() {
 	zerolog.TimeFieldFormat = zerolog.TimeFormatUnix
 	database.Init()
+	_ = core.InitConfig()
 	_ = core.InitRooms()
 	api.Serve()
 }
