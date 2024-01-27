@@ -36,6 +36,7 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		okResponse(player.ID, token, w)
+		return
 	}
 
 	id, err := auth.CheckToken(loginRequest.Token)
