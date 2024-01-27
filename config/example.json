@@ -1,25 +1,24 @@
 {
-    "phrases" :
-    [
-      {
-        "id" : 0,
-        "localizationKey" : "key",
-        "placeholdersAmount" : 1
-      }
+    "localization_keys": [
+        "phrases_$",
+        "words_$",
+        "category_$"
     ],
-    "words" :
-    [
-      {
-        "id" : 0,
-        "localizationKey" : "key",
-        "categoryId" : 1
-      }
+    "phrases": [
+        {
+            "id": 1,
+            "placeholdersAmount": 1
+        }
     ],
-    "categories" :
-    [
-      {
-        "id" : 0,
-        "localizationKey" : "key"
-      }
+    "words": [
+        {
+            "id": 1,
+            "categoryId": 1
+        }
+    ],
+    "categories": [
+        {
+            "id": 1
+        }
     ]
-  }
+}
