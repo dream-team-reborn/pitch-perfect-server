@@ -86,7 +86,9 @@ func CreateRoom(name string) (uuid.UUID, error) {
 	c := make(chan RoomCmd)
 	roomsMutex.Lock()
 	defer roomsMutex.Unlock()
-
+	if roomsIndex == nil {
+		roomsIndex = make(map[uuid.UUID]chan RoomCmd)
+	}
 	roomsIndex[room.ID] = c
 
 	go roomCycle(room, c)
