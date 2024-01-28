@@ -291,6 +291,7 @@ func handleCmdDuringTurnStarted(cmd RoomCmd, room *entities.Room) {
 	switch cmd.Type {
 	case PlayerCardsSelected:
 		selectedCards[cmd.PlayerId] = cmd.Cards
+		removeUsedCards(cmd.PlayerId, cmd.Cards)
 		if len(selectedCards) >= len(room.Players) {
 			room.State += 1
 			database.Db.Save(&room)
@@ -394,9 +395,10 @@ func generateTrends() {
 }
 
 func generateWordCategory() map[uint]uint {
+	words, _ := GetWords()
 	wordsCategory := make(map[uint]uint)
-	for k, v := range wordsCategory {
-		wordsCategory[k] = v
+	for _, v := range words {
+		wordsCategory[v.ID] = v.CategoryId
 	}
 	return wordsCategory
 }
@@ -419,6 +421,22 @@ func generateHands(room *entities.Room) {
 
 		hands[v.ID] = hand
 	}
+}
+
+func removeUsedCards(playerId uuid.UUID, cards []uint) {
+	playerHand := hands[playerId]
+	newPlayerHand := make([]entities.Word, 0)
+	for _, w := range playerHand {
+		found := false
+		for _, c := range cards {
+			found = found || c == w.ID
+		}
+
+		if !found {
+			newPlayerHand = append(newPlayerHand, w)
+		}
+	}
+	hands[playerId] = newPlayerHand
 }
 
 func generatePhrase() {
@@ -482,6 +500,8 @@ func startTurn(room *entities.Room) {
 	generatePhrase()
 	generateHands(room)
 	resetInternal()
+	room.State = RoomStateTurnStarted
+	database.Db.Save(&room)
 	iter.ForEach(room.Players,
 		func(player *entities.Player) {
 			hand, ok := hands[player.ID]
@@ -507,7 +527,7 @@ func endTurn(room *entities.Room) {
 	turnLeaderboard := make(map[uuid.UUID]uint)
 	for player, cards := range selectedCards {
 		for _, card := range cards {
-			points := trends[wordCategory[card]]
+			points := trends[wordCategory[card]] + 1
 			if player == winner {
 				points *= 2
 			}
@@ -519,7 +539,8 @@ func endTurn(room *entities.Room) {
 		leaderboard[player.ID] += turnLeaderboard[player.ID]
 	}
 
-	GameEnded := turn+1 >= TurnMax
+	turn += 1
+	GameEnded := turn >= TurnMax
 
 	iter.ForEach(room.Players,
 		func(player *entities.Player) {
