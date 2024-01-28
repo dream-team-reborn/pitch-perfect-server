@@ -34,12 +34,10 @@ func WsHandler(w http.ResponseWriter, r *http.Request) {
 
 	go listenEventChannel(eventChannel, socket)
 
-	var roomJoined uuid.UUID
-
 	for {
 		mt, bytes, err := socket.ReadMessage()
 		if err != nil {
-			//log.Println("read:", err)
+			log.Err(err)
 			break
 		}
 
@@ -94,9 +92,6 @@ func WsHandler(w http.ResponseWriter, r *http.Request) {
 				}
 
 				err = core.JoinRoom(playerId, roomId)
-				if err == nil {
-					roomJoined = roomId
-				}
 				response["Result"] = err == nil
 
 				break
@@ -142,6 +137,80 @@ func WsHandler(w http.ResponseWriter, r *http.Request) {
 				*c <- core.RoomCmd{Type: core.PlayerReady, PlayerId: playerId}
 				break
 
+			case "PlayerCardsSelected":
+				roomIdStr, ok := msg["RoomId"].(string)
+				if !ok {
+					response["Error"] = "No room name"
+					break
+				}
+
+				roomId, err := uuid.Parse(roomIdStr)
+				if err != nil {
+					response["Error"] = err
+					break
+				}
+
+				cardsFloat, ok := msg["Cards"].([]float64)
+				if !ok {
+					response["Error"] = "No room name"
+					break
+				}
+				cards := make([]uint, len(cardsFloat))
+				for i, v := range cardsFloat {
+					cards[i] = uint(v)
+				}
+
+				c, err := core.GetChannelByRoom(roomId)
+				if err != nil {
+					response["Error"] = err
+					break
+				}
+
+				response = nil
+
+				*c <- core.RoomCmd{Type: core.PlayerCardsSelected, PlayerId: playerId, Cards: cards}
+				break
+
+			case "PlayerRatedOtherCards":
+				roomIdStr, ok := msg["RoomId"].(string)
+				if !ok {
+					response["Error"] = "No room name"
+					break
+				}
+
+				roomId, err := uuid.Parse(roomIdStr)
+				if err != nil {
+					response["Error"] = err
+					break
+				}
+
+				reviews0, ok := msg["Reviews"].(map[string]bool)
+				if !ok {
+					response["Error"] = "No review name"
+					break
+				}
+				reviews := make(map[uuid.UUID]bool)
+				for k, v := range reviews0 {
+					id, err := uuid.Parse(k)
+					if err != nil {
+						response["Error"] = err
+						break
+					}
+
+					reviews[id] = v
+				}
+
+				c, err := core.GetChannelByRoom(roomId)
+				if err != nil {
+					response["Error"] = err
+					break
+				}
+
+				response = nil
+
+				*c <- core.RoomCmd{Type: core.PlayerRatedOtherCards, PlayerId: playerId, Reviews: reviews}
+				break
+
 			default:
 				if err != nil {
 					log.Err(err)
@@ -163,8 +232,6 @@ func WsHandler(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 	}
-
-	_ = core.LeaveRoom(playerId, roomJoined)
 
 	log.Warn().Msg("Conn destroyed")
 }
@@ -207,7 +274,7 @@ func listenEventChannel(c *chan core.PlayerEvent, socket *websocket.Conn) {
 			break
 		case core.AllPlayerSelectedCards:
 			response["Type"] = "AllPlayerSelectedCards"
-			response["PlayersCard"] = event.PlayersCards
+			response["PlayersCards"] = event.PlayersCards
 			break
 		case core.TurnEnded:
 			response["Type"] = "TurnEnded"

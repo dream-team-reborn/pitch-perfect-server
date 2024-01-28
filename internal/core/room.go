@@ -30,8 +30,8 @@ const (
 	Leave
 	PlayerReady
 	PlayerReadyTimeout
-	PlayerCardSelected
-	PlayerCardSelectedTimeout
+	PlayerCardsSelected
+	PlayerCardsSelectedTimeout
 	PlayerRatedOtherCards
 	PlayerRatedOtherCardsTimeout
 )
@@ -49,7 +49,7 @@ type RoomCmd struct {
 	PlayerId uuid.UUID
 	Player   entities.Player
 	Cards    []uint
-	Review   map[uuid.UUID]bool
+	Reviews  map[uuid.UUID]bool
 }
 
 func InitRooms() error {
@@ -116,13 +116,17 @@ func JoinRoom(joinerId uuid.UUID, roomId uuid.UUID) error {
 	}
 
 	newPlayers := append(room.Players, player)
-	newPlayers, onlyUnique := uniqueSliceElements(newPlayers)
-	if !onlyUnique {
-		room.Players = newPlayers
-		tx = database.Db.Save(room)
-		if err != nil {
-			return err
-		}
+	newPlayers, _ = uniqueSliceElements(newPlayers)
+	room.Players = newPlayers
+	tx = database.Db.Save(room)
+	if err != nil {
+		return err
+	}
+
+	player.RoomId = room.ID
+	tx = database.Db.Save(player)
+	if err != nil {
+		return err
 	}
 
 	c, err := GetChannelByRoom(roomId)
@@ -270,7 +274,7 @@ func handleCmdDuringWaiting(cmd RoomCmd, room *entities.Room) {
 
 func handleCmdDuringTurnStarted(cmd RoomCmd, room *entities.Room) {
 	switch cmd.Type {
-	case PlayerCardSelected:
+	case PlayerCardsSelected:
 		selectedCards[cmd.PlayerId] = cmd.Cards
 		if len(selectedCards) >= len(room.Players) {
 			room.State += 1
@@ -286,7 +290,7 @@ func handleCmdDuringTurnStarted(cmd RoomCmd, room *entities.Room) {
 				})
 		}
 		break
-	case PlayerCardSelectedTimeout:
+	case PlayerCardsSelectedTimeout:
 		break
 	default:
 		log.Error().Msg("Received a cmd not valid during turn started phase")
@@ -297,7 +301,7 @@ func handleCmdDuringTurnStarted(cmd RoomCmd, room *entities.Room) {
 func handleCmdDuringReview(cmd RoomCmd, room *entities.Room) {
 	switch cmd.Type {
 	case PlayerRatedOtherCards:
-		playersReview[cmd.PlayerId] = cmd.Review
+		playersReview[cmd.PlayerId] = cmd.Reviews
 		if len(playersReview) >= len(room.Players) {
 			room.State = 0
 			database.Db.Save(&room)
