@@ -466,6 +466,7 @@ func gameStart(room *entities.Room) {
 	shuffleDeck(&deckPhrases)
 	generateTrends()
 	generateWordCategory()
+	leaderboard = make(map[uuid.UUID]uint)
 	iter.ForEach(room.Players,
 		func(player *entities.Player) {
 			playersMutex.Lock()
