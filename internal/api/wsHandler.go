@@ -34,6 +34,8 @@ func WsHandler(w http.ResponseWriter, r *http.Request) {
 
 	go listenEventChannel(eventChannel, socket)
 
+	var roomJoined uuid.UUID
+
 	for {
 		mt, bytes, err := socket.ReadMessage()
 		if err != nil {
@@ -92,6 +94,9 @@ func WsHandler(w http.ResponseWriter, r *http.Request) {
 				}
 
 				err = core.JoinRoom(playerId, roomId)
+				if err == nil {
+					roomJoined = roomId
+				}
 				response["Result"] = err == nil
 
 				break
@@ -113,6 +118,30 @@ func WsHandler(w http.ResponseWriter, r *http.Request) {
 				response["Result"] = err == nil
 				break
 
+			case "PlayerReady":
+				roomIdStr, ok := msg["RoomId"].(string)
+				if !ok {
+					response["Error"] = "No room name"
+					break
+				}
+
+				roomId, err := uuid.Parse(roomIdStr)
+				if err != nil {
+					response["Error"] = err
+					break
+				}
+
+				c, err := core.GetChannelByRoom(roomId)
+				if err != nil {
+					response["Error"] = err
+					break
+				}
+
+				response = nil
+
+				*c <- core.RoomCmd{Type: core.PlayerReady, PlayerId: playerId}
+				break
+
 			default:
 				if err != nil {
 					log.Err(err)
@@ -120,18 +149,22 @@ func WsHandler(w http.ResponseWriter, r *http.Request) {
 				}
 			}
 
-			output, err := json.Marshal(response)
-			if err != nil {
-				log.Err(err)
-				break
-			}
-			err = socket.WriteMessage(mt, output)
-			if err != nil {
-				log.Err(err)
-				break
+			if response != nil {
+				output, err := json.Marshal(response)
+				if err != nil {
+					log.Err(err)
+					break
+				}
+				err = socket.WriteMessage(mt, output)
+				if err != nil {
+					log.Err(err)
+					break
+				}
 			}
 		}
 	}
+
+	_ = core.LeaveRoom(playerId, roomJoined)
 
 	log.Warn().Msg("Conn destroyed")
 }
@@ -158,10 +191,35 @@ func listenEventChannel(c *chan core.PlayerEvent, socket *websocket.Conn) {
 		case core.RoomJoined:
 			response["Type"] = "RoomJoined"
 			response["Player"] = event.Player
+			break
 		case core.RoomLeaved:
 			response["Type"] = "RoomLeaved"
 			response["PlayerId"] = event.PlayerId
+			break
+		case core.GameStarted:
+			response["Type"] = "GameStarted"
+			response["Trends"] = event.Trends
+			break
+		case core.TurnStarted:
+			response["Type"] = "TurnStarted"
+			response["Cards"] = event.Cards
+			response["Phrase"] = event.Phrase
+			break
+		default:
+			break
 		}
+
+		output, err := json.Marshal(response)
+		if err != nil {
+			log.Err(err)
+		}
+
+		err = socket.WriteMessage(1, output)
+		if err != nil {
+			log.Err(err)
+		}
+
+		log.Info().Interface("output", output).Send()
 
 	}
 }

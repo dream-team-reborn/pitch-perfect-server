@@ -7,10 +7,12 @@ import (
 )
 
 type Room struct {
-	ID        uuid.UUID `gorm:"type:uuid;primary_key;"`
-	CreatedAt time.Time
-	UpdatedAt time.Time
-	DeletedAt gorm.DeletedAt `gorm:"index"`
-	Name      string
-	Players   []Player
+	ID           uuid.UUID `gorm:"type:uuid;primary_key;"`
+	CreatedAt    time.Time
+	UpdatedAt    time.Time
+	DeletedAt    gorm.DeletedAt `gorm:"index"`
+	Name         string
+	Players      []Player
+	State        uint
+	PlayersReady []uuid.UUID `gorm:"-"`
 }

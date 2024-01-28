@@ -13,13 +13,23 @@ var playersMutex sync.Mutex
 const (
 	RoomJoined uint = iota
 	RoomLeaved
+	GameStarted
+	TurnStarted
+	AllPlayerSelectedCards
+	TurnEnded
 )
 
 type PlayerEvent struct {
-	Type     uint
-	RoomId   uuid.UUID
-	PlayerId uuid.UUID
-	Player   entities.Player
+	Type         uint
+	RoomId       uuid.UUID
+	PlayerId     uuid.UUID
+	Player       entities.Player
+	Cards        []entities.Word
+	Phrase       entities.Phrase
+	PlayersCards [][]entities.Word
+	Players      map[uuid.UUID]uint
+	Trends       map[uint]uint
+	LastTurn     bool
 }
 
 func AddPlayer(name string) (entities.Player, error) {

@@ -54,3 +54,21 @@ func InitConfig() error {
 
 	return nil
 }
+
+func GetPhrases() ([]entities.Phrase, error) {
+	var phrases []entities.Phrase
+	tx := database.Db.Find(&phrases)
+	return phrases, tx.Error
+}
+
+func GetWords() ([]entities.Word, error) {
+	var words []entities.Word
+	tx := database.Db.Find(&words)
+	return words, tx.Error
+}
+
+func GetCategories() ([]entities.Category, error) {
+	var categories []entities.Category
+	tx := database.Db.Find(&categories)
+	return categories, tx.Error
+}
