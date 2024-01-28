@@ -122,7 +122,7 @@ func WsHandler(w http.ResponseWriter, r *http.Request) {
 			case "PlayerReady":
 				roomIdStr, ok := msg["RoomId"].(string)
 				if !ok {
-					response["Error"] = "No room name"
+					response["Error"] = "No room id"
 					break
 				}
 
@@ -146,7 +146,7 @@ func WsHandler(w http.ResponseWriter, r *http.Request) {
 			case "PlayerCardsSelected":
 				roomIdStr, ok := msg["RoomId"].(string)
 				if !ok {
-					response["Error"] = "No room name"
+					response["Error"] = "No room id"
 					break
 				}
 
@@ -156,14 +156,14 @@ func WsHandler(w http.ResponseWriter, r *http.Request) {
 					break
 				}
 
-				cardsFloat, ok := msg["Cards"].([]float64)
+				cardsData, ok := msg["Cards"].([]interface{})
 				if !ok {
-					response["Error"] = "No room name"
+					response["Error"] = "No player cards"
 					break
 				}
-				cards := make([]uint, len(cardsFloat))
-				for i, v := range cardsFloat {
-					cards[i] = uint(v)
+				cards := make([]uint, len(cardsData))
+				for k, v := range cardsData {
+					cards[k] = uint(v.(float64))
 				}
 
 				c, err := core.GetChannelByRoom(roomId)
@@ -180,7 +180,7 @@ func WsHandler(w http.ResponseWriter, r *http.Request) {
 			case "PlayerRatedOtherCards":
 				roomIdStr, ok := msg["RoomId"].(string)
 				if !ok {
-					response["Error"] = "No room name"
+					response["Error"] = "No room id"
 					break
 				}
 
