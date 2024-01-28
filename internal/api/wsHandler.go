@@ -8,11 +8,13 @@ import (
 	"net/http"
 	"pitch-perfect-server/internal/auth"
 	"pitch-perfect-server/internal/core"
+	"sync"
 )
 
 var ws = websocket.Upgrader{} // use default options
 
 func WsHandler(w http.ResponseWriter, r *http.Request) {
+	var mutex sync.Mutex
 	socket, err := ws.Upgrade(w, r, nil)
 	if err != nil {
 		//log.Print("upgrade:", err)
@@ -34,7 +36,7 @@ func WsHandler(w http.ResponseWriter, r *http.Request) {
 
 	var room uuid.UUID
 
-	go listenEventChannel(eventChannel, socket)
+	go listenEventChannel(eventChannel, socket, &mutex)
 
 	for {
 		mt, bytes, err := socket.ReadMessage()
@@ -230,7 +232,9 @@ func WsHandler(w http.ResponseWriter, r *http.Request) {
 					log.Err(err)
 					break
 				}
+				mutex.Lock()
 				err = socket.WriteMessage(mt, output)
+				mutex.Unlock()
 				if err != nil {
 					log.Err(err)
 					break
@@ -251,7 +255,7 @@ func checkToken(r *http.Request) (uuid.UUID, error) {
 	return auth.CheckToken(token)
 }
 
-func listenEventChannel(c *chan core.PlayerEvent, socket *websocket.Conn) {
+func listenEventChannel(c *chan core.PlayerEvent, socket *websocket.Conn, mt *sync.Mutex) {
 	for {
 		if socket == nil {
 			break
@@ -302,7 +306,9 @@ func listenEventChannel(c *chan core.PlayerEvent, socket *websocket.Conn) {
 			log.Err(err)
 		}
 
+		mt.Lock()
 		err = socket.WriteMessage(1, output)
+		mt.Unlock()
 		if err != nil {
 			log.Err(err)
 		}
