@@ -190,20 +190,20 @@ func WsHandler(w http.ResponseWriter, r *http.Request) {
 					break
 				}
 
-				reviews0, ok := msg["Reviews"].(map[string]bool)
+				data, ok := msg["Reviews"]
 				if !ok {
 					response["Error"] = "No review name"
 					break
 				}
 				reviews := make(map[uuid.UUID]bool)
-				for k, v := range reviews0 {
+				for k, v := range data.(map[string]interface{}) {
 					id, err := uuid.Parse(k)
 					if err != nil {
 						response["Error"] = err
 						break
 					}
 
-					reviews[id] = v
+					reviews[id] = v.(bool)
 				}
 
 				c, err := core.GetChannelByRoom(roomId)
