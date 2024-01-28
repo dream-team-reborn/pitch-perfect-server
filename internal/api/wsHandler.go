@@ -239,7 +239,9 @@ func WsHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	core.LeaveRoom(playerId, room)
+	if room != uuid.Nil {
+		core.LeaveRoom(playerId, room)
+	}
 
 	log.Warn().Msg("Conn destroyed")
 }
