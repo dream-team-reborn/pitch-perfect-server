@@ -531,4 +531,7 @@ func endTurn(room *entities.Room) {
 			}
 		})
 
+	if !GameEnded {
+		startTurn(room)
+	}
 }
