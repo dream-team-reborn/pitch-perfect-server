@@ -2,6 +2,7 @@ package api
 
 import (
 	"crypto/tls"
+	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	"golang.org/x/crypto/acme/autocert"
 	"net/http"
@@ -22,9 +23,14 @@ func Serve() {
 		Cache:      autocert.DirCache("./certs"), //Folder for storing certificates
 	}
 
+	credentials := handlers.AllowCredentials()
+	methods := handlers.AllowedMethods([]string{"GET", "POST", "OPTIONS"})
+	origins := handlers.AllowedOrigins([]string{"*"})
+	headers := handlers.AllowedHeaders([]string{"Accept", "X-Access-Token", "X-Application-Name", "X-Request-Sent-Time", "Content-Type"})
+
 	server := &http.Server{
 		Addr:    ":https",
-		Handler: r,
+		Handler: handlers.CORS(credentials, methods, origins, headers)(r),
 		TLSConfig: &tls.Config{
 			GetCertificate: certManager.GetCertificate,
 		},
@@ -33,4 +39,14 @@ func Serve() {
 	go http.ListenAndServe(":http", certManager.HTTPHandler(nil))
 
 	server.ListenAndServeTLS("", "") //Key and cert are coming from Let's Encrypt
+}
+
+func corsMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		next.ServeHTTP(w, r)
+
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PATCH, PUT, DELETE, OPTIONS")
+		w.Header().Set("Access-Control-Allow-Headers:", "Origin, Content-Type, X-Auth-Token, Authorization")
+	})
 }
