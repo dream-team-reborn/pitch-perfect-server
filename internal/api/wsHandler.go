@@ -32,6 +32,8 @@ func WsHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	var room uuid.UUID
+
 	go listenEventChannel(eventChannel, socket)
 
 	for {
@@ -61,12 +63,13 @@ func WsHandler(w http.ResponseWriter, r *http.Request) {
 					break
 				}
 
-				roomId, err := core.CreateRoom(playerId, roomName)
+				roomId, err := core.CreateRoom(roomName)
 				if err != nil {
 					response["Error"] = err
 				}
 
 				response["RoomId"] = roomId
+				break
 
 			case "GetRooms":
 				rooms, err := core.GetAllRooms()
@@ -92,8 +95,11 @@ func WsHandler(w http.ResponseWriter, r *http.Request) {
 				}
 
 				err = core.JoinRoom(playerId, roomId)
-				response["Result"] = err == nil
+				if err == nil {
+					room = roomId
+				}
 
+				response["Result"] = err == nil
 				break
 
 			case "LeaveRoom":
@@ -232,6 +238,8 @@ func WsHandler(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 	}
+
+	core.LeaveRoom(playerId, room)
 
 	log.Warn().Msg("Conn destroyed")
 }

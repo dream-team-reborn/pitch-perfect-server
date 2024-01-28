@@ -74,7 +74,7 @@ func InitRooms() error {
 	return nil
 }
 
-func CreateRoom(creatorId uuid.UUID, name string) (uuid.UUID, error) {
+func CreateRoom(name string) (uuid.UUID, error) {
 	id, err := uuid.NewUUID()
 	if err != nil {
 		log.Error().Msg("Impossible to create UUID")
@@ -83,13 +83,10 @@ func CreateRoom(creatorId uuid.UUID, name string) (uuid.UUID, error) {
 	room := entities.Room{ID: id, Name: name}
 	database.Db.Create(&room)
 
-	var c chan RoomCmd
+	c := make(chan RoomCmd)
 	roomsMutex.Lock()
 	defer roomsMutex.Unlock()
 
-	if roomsIndex == nil {
-		roomsIndex = make(map[uuid.UUID]chan RoomCmd)
-	}
 	roomsIndex[room.ID] = c
 
 	go roomCycle(room, c)
@@ -142,6 +139,17 @@ func JoinRoom(joinerId uuid.UUID, roomId uuid.UUID) error {
 func LeaveRoom(leaverId uuid.UUID, roomId uuid.UUID) error {
 	var room entities.Room
 	tx := database.Db.Preload("Players").First(&room, roomId)
+	if tx.Error != nil {
+		return tx.Error
+	}
+
+	player, err := GetPlayer(leaverId)
+	if err != nil {
+		return err
+	}
+
+	player.RoomId = uuid.Nil
+	tx = database.Db.Save(player)
 	if tx.Error != nil {
 		return tx.Error
 	}
@@ -222,15 +230,20 @@ func roomCycle(room entities.Room, c chan RoomCmd) {
 			leaver := Cmd.PlayerId
 			newPlayers := deleteElement(room.Players, leaver)
 			room.Players = newPlayers
-			iter.ForEach(room.Players, func(player *entities.Player) {
-				playersMutex.Lock()
-				defer playersMutex.Unlock()
 
-				chl, ok := playersIndex[player.ID]
-				if ok {
-					chl <- PlayerEvent{Type: RoomLeaved, PlayerId: leaver}
-				}
-			})
+			if len(room.Players) > 0 {
+				iter.ForEach(room.Players, func(player *entities.Player) {
+					playersMutex.Lock()
+					defer playersMutex.Unlock()
+
+					chl, ok := playersIndex[player.ID]
+					if ok {
+						chl <- PlayerEvent{Type: RoomLeaved, PlayerId: leaver}
+					}
+				})
+			} else {
+				room.State = RoomStateWaiting
+			}
 			break
 		default:
 			handleCmdDuringRoomState(Cmd, &room)
