@@ -205,6 +205,17 @@ func listenEventChannel(c *chan core.PlayerEvent, socket *websocket.Conn) {
 			response["Cards"] = event.Cards
 			response["Phrase"] = event.Phrase
 			break
+		case core.AllPlayerSelectedCards:
+			response["Type"] = "AllPlayerSelectedCards"
+			response["PlayersCard"] = event.PlayersCards
+			break
+		case core.TurnEnded:
+			response["Type"] = "TurnEnded"
+			response["Trends"] = event.Trends
+			response["Leaderboards"] = event.Leaderboards
+			response["Result"] = event.Result
+			response["LastTurn"] = event.LastTurn
+			break
 		default:
 			break
 		}

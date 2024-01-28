@@ -26,10 +26,12 @@ type PlayerEvent struct {
 	Player       entities.Player
 	Cards        []entities.Word
 	Phrase       entities.Phrase
-	PlayersCards [][]entities.Word
+	PlayersCards map[uuid.UUID][]uint
 	Players      map[uuid.UUID]uint
 	Trends       map[uint]uint
 	LastTurn     bool
+	Leaderboards map[uuid.UUID]uint
+	Result       map[uuid.UUID]uint
 }
 
 func AddPlayer(name string) (entities.Player, error) {

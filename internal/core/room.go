@@ -17,12 +17,13 @@ var roomsIndex map[uuid.UUID]chan RoomCmd
 var roomsMutex sync.Mutex
 var deckWords []entities.Word
 var deckPhrases []entities.Phrase
-var categories []entities.Category
 var phrase entities.Phrase
 var hands map[uuid.UUID][]entities.Word
 var trends map[uint]uint
 var selectedCards map[uuid.UUID][]uint
 var playersReview map[uuid.UUID]map[uuid.UUID]bool
+var turn uint
+var leaderboard map[uuid.UUID]uint
 
 const (
 	Joined uint = iota
@@ -40,6 +41,8 @@ const (
 	RoomStateTurnStarted
 	RoomStateReview
 )
+
+const TurnMax = 4
 
 type RoomCmd struct {
 	Type     uint
@@ -77,15 +80,7 @@ func CreateRoom(creatorId uuid.UUID, name string) (uuid.UUID, error) {
 		log.Error().Msg("Impossible to create UUID")
 	}
 
-	creator, err := GetPlayer(creatorId)
-	if err != nil {
-		return uuid.Nil, err
-	}
-
-	var players []entities.Player
-	players = append(players, creator)
-
-	room := entities.Room{ID: id, Name: name, Players: players}
+	room := entities.Room{ID: id, Name: name}
 	database.Db.Create(&room)
 
 	var c chan RoomCmd
@@ -280,6 +275,15 @@ func handleCmdDuringTurnStarted(cmd RoomCmd, room *entities.Room) {
 		if len(selectedCards) >= len(room.Players) {
 			room.State += 1
 			database.Db.Save(&room)
+			iter.ForEach(room.Players,
+				func(player *entities.Player) {
+					playersMutex.Lock()
+					defer playersMutex.Unlock()
+					c, ok := playersIndex[(*player).ID]
+					if ok {
+						c <- PlayerEvent{Type: AllPlayerSelectedCards, PlayersCards: selectedCards}
+					}
+				})
 		}
 		break
 	case PlayerCardSelectedTimeout:
@@ -295,8 +299,9 @@ func handleCmdDuringReview(cmd RoomCmd, room *entities.Room) {
 	case PlayerRatedOtherCards:
 		playersReview[cmd.PlayerId] = cmd.Review
 		if len(playersReview) >= len(room.Players) {
-			room.State += 1
+			room.State = 0
 			database.Db.Save(&room)
+			endTurn(room)
 		}
 		break
 	case PlayerRatedOtherCardsTimeout:
@@ -369,6 +374,14 @@ func generateTrends() {
 	}
 }
 
+func generateWordCategory() map[uint]uint {
+	wordsCategory := make(map[uint]uint)
+	for k, v := range wordsCategory {
+		wordsCategory[k] = v
+	}
+	return wordsCategory
+}
+
 func generateHands(room *entities.Room) {
 	if hands == nil {
 		hands = make(map[uuid.UUID][]entities.Word)
@@ -430,10 +443,10 @@ func gameStart(room *entities.Room) {
 	database.Db.Save(&room)
 	deckWords, _ = GetWords()
 	deckPhrases, _ = GetPhrases()
-	categories, _ = GetCategories()
 	shuffleDeck(&deckWords)
 	shuffleDeck(&deckPhrases)
 	generateTrends()
+	generateWordCategory()
 	iter.ForEach(room.Players,
 		func(player *entities.Player) {
 			playersMutex.Lock()
@@ -468,5 +481,34 @@ func startTurn(room *entities.Room) {
 
 func endTurn(room *entities.Room) {
 	generateTrends()
-	_ = getReviewWinner(room)
+	winner := getReviewWinner(room)
+	wordCategory := generateWordCategory()
+
+	turnLeaderboard := make(map[uuid.UUID]uint)
+	for player, cards := range selectedCards {
+		for _, card := range cards {
+			points := trends[wordCategory[card]]
+			if player == winner {
+				points *= 2
+			}
+			turnLeaderboard[player] = points
+		}
+	}
+
+	for _, player := range room.Players {
+		leaderboard[player.ID] += turnLeaderboard[player.ID]
+	}
+
+	GameEnded := turn+1 >= TurnMax
+
+	iter.ForEach(room.Players,
+		func(player *entities.Player) {
+			playersMutex.Lock()
+			defer playersMutex.Unlock()
+			c, ok := playersIndex[(*player).ID]
+			if ok {
+				c <- PlayerEvent{Type: TurnEnded, Trends: trends, Leaderboards: leaderboard, Result: turnLeaderboard, LastTurn: GameEnded}
+			}
+		})
+
 }
