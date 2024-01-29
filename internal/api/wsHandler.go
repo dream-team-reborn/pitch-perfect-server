@@ -11,7 +11,7 @@ import (
 	"sync"
 )
 
-var ws = websocket.Upgrader{} // use default options
+var ws = websocket.Upgrader{CheckOrigin: func(r *http.Request) bool { return true }} // use default options
 
 func WsHandler(w http.ResponseWriter, r *http.Request) {
 	var mutex sync.Mutex
