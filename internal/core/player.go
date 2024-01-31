@@ -17,11 +17,13 @@ const (
 	TurnStarted
 	AllPlayerSelectedCards
 	TurnEnded
+	RoomCreated
 )
 
 type PlayerEvent struct {
 	Type         uint
 	RoomId       uuid.UUID
+	Room         entities.Room
 	PlayerId     uuid.UUID
 	Player       entities.Player
 	Cards        []entities.Word
@@ -60,4 +62,12 @@ func AddPlayerConnection(id uuid.UUID) (*chan PlayerEvent, error) {
 	c = make(chan PlayerEvent)
 	playersIndex[id] = c
 	return &c, nil
+}
+
+func SendToAllConnectedPlayers(event PlayerEvent) {
+	playersMutex.Lock()
+	defer playersMutex.Unlock()
+	for _, c := range playersIndex {
+		c <- event
+	}
 }

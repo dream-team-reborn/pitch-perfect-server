@@ -93,6 +93,8 @@ func CreateRoom(name string) (uuid.UUID, error) {
 
 	go roomCycle(room, c)
 
+	SendToAllConnectedPlayers(PlayerEvent{Type: RoomCreated, Room: room})
+
 	return room.ID, nil
 }
 

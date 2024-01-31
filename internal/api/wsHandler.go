@@ -297,6 +297,10 @@ func listenEventChannel(c *chan core.PlayerEvent, socket *websocket.Conn, mt *sy
 			response["Result"] = event.Result
 			response["LastTurn"] = event.LastTurn
 			break
+		case core.RoomCreated:
+			response["Type"] = "RoomCreated"
+			response["Room"] = event.Room
+			break
 		default:
 			break
 		}
