@@ -248,29 +248,33 @@ func roomCycle(room entities.Room, c chan RoomCmd) {
 			}
 			break
 		default:
-			handleCmdDuringRoomState(Cmd, &room)
+			handleCmdDuringRoomState(Cmd, &room, &c)
 			break
 		}
 	}
 }
 
-func handleCmdDuringRoomState(cmd RoomCmd, room *entities.Room) {
+func handleCmdDuringRoomState(cmd RoomCmd, room *entities.Room, c *chan RoomCmd) {
 	switch room.State {
 	case RoomStateWaiting:
-		handleCmdDuringWaiting(cmd, room)
+		handleCmdDuringWaiting(cmd, room, c)
 		break
 	case RoomStateTurnStarted:
-		handleCmdDuringTurnStarted(cmd, room)
+		handleCmdDuringTurnStarted(cmd, room, c)
 		break
 	case RoomStateReview:
-		handleCmdDuringReview(cmd, room)
+		handleCmdDuringReview(cmd, room, c)
 		break
 	}
 }
 
-func handleCmdDuringWaiting(cmd RoomCmd, room *entities.Room) {
+func handleCmdDuringWaiting(cmd RoomCmd, room *entities.Room, c *chan RoomCmd) {
 	switch cmd.Type {
 	case PlayerReady:
+		if len(room.PlayersReady) == 0 {
+			timeout(RoomCmd{Type: PlayerReadyTimeout}, 30*time.Second, c)
+		}
+
 		newReadyPlayers := append(room.PlayersReady, cmd.PlayerId)
 		newReadyPlayers, _ = uniqueSliceElements(newReadyPlayers)
 		room.PlayersReady = newReadyPlayers
@@ -280,6 +284,8 @@ func handleCmdDuringWaiting(cmd RoomCmd, room *entities.Room) {
 		}
 		break
 	case PlayerReadyTimeout:
+		gameStart(room)
+		startTurn(room)
 		break
 	default:
 		log.Error().Msg("Received a cmd not valid during waiting phase")
@@ -287,26 +293,21 @@ func handleCmdDuringWaiting(cmd RoomCmd, room *entities.Room) {
 	}
 }
 
-func handleCmdDuringTurnStarted(cmd RoomCmd, room *entities.Room) {
+func handleCmdDuringTurnStarted(cmd RoomCmd, room *entities.Room, c *chan RoomCmd) {
 	switch cmd.Type {
 	case PlayerCardsSelected:
+		if len(selectedCards) == 0 {
+			timeout(RoomCmd{Type: PlayerCardsSelectedTimeout}, 2*time.Minute, c)
+		}
+
 		selectedCards[cmd.PlayerId] = cmd.Cards
 		removeUsedCards(cmd.PlayerId, cmd.Cards)
 		if len(selectedCards) >= len(room.Players) {
-			room.State += 1
-			database.Db.Save(&room)
-			iter.ForEach(room.Players,
-				func(player *entities.Player) {
-					playersMutex.Lock()
-					defer playersMutex.Unlock()
-					c, ok := playersIndex[(*player).ID]
-					if ok {
-						c <- PlayerEvent{Type: AllPlayerSelectedCards, PlayersCards: selectedCards}
-					}
-				})
+			allPlayerSelectedCards(room)
 		}
 		break
 	case PlayerCardsSelectedTimeout:
+		allPlayerSelectedCards(room)
 		break
 	default:
 		log.Error().Msg("Received a cmd not valid during turn started phase")
@@ -314,17 +315,20 @@ func handleCmdDuringTurnStarted(cmd RoomCmd, room *entities.Room) {
 	}
 }
 
-func handleCmdDuringReview(cmd RoomCmd, room *entities.Room) {
+func handleCmdDuringReview(cmd RoomCmd, room *entities.Room, c *chan RoomCmd) {
 	switch cmd.Type {
 	case PlayerRatedOtherCards:
+		if len(playersReview) == 0 {
+			timeout(RoomCmd{Type: PlayerRatedOtherCardsTimeout}, 2*time.Minute, c)
+		}
+
 		playersReview[cmd.PlayerId] = cmd.Reviews
 		if len(playersReview) >= len(room.Players) {
-			room.State = 0
-			database.Db.Save(&room)
 			endTurn(room)
 		}
 		break
 	case PlayerRatedOtherCardsTimeout:
+		endTurn(room)
 		break
 	default:
 		log.Error().Msg("Received a cmd not valid during review phase")
@@ -519,7 +523,24 @@ func startTurn(room *entities.Room) {
 		})
 }
 
+func allPlayerSelectedCards(room *entities.Room) {
+	room.State += 1
+	database.Db.Save(&room)
+	iter.ForEach(room.Players,
+		func(player *entities.Player) {
+			playersMutex.Lock()
+			defer playersMutex.Unlock()
+			c, ok := playersIndex[(*player).ID]
+			if ok {
+				c <- PlayerEvent{Type: AllPlayerSelectedCards, PlayersCards: selectedCards}
+			}
+		})
+}
+
 func endTurn(room *entities.Room) {
+	room.State = 0
+	database.Db.Save(&room)
+
 	generateTrends()
 	winner := getReviewWinner(room)
 	wordCategory := generateWordCategory()
@@ -555,4 +576,13 @@ func endTurn(room *entities.Room) {
 	if !GameEnded {
 		startTurn(room)
 	}
+}
+
+func timeout(cmd RoomCmd, duration time.Duration, c *chan RoomCmd) {
+	go func() {
+		time.Sleep(duration)
+		if c != nil {
+			*c <- cmd
+		}
+	}()
 }
