@@ -273,7 +273,7 @@ func handleCmdDuringRoomState(cmd RoomCmd, room *entities.Room, c *chan RoomCmd)
 func handleCmdDuringWaiting(cmd RoomCmd, room *entities.Room, c *chan RoomCmd) {
 	switch cmd.Type {
 	case PlayerReady:
-		if len(room.PlayersReady) == 0 {
+		if len(room.PlayersReady) == 0 && len(room.Players) > 1 {
 			timeout(RoomCmd{Type: PlayerReadyTimeout}, 15*time.Second, c)
 		}
 
@@ -283,11 +283,13 @@ func handleCmdDuringWaiting(cmd RoomCmd, room *entities.Room, c *chan RoomCmd) {
 		if len(room.PlayersReady) >= len(room.Players) && len(room.Players) >= 1 {
 			gameStart(room)
 			startTurn(room)
+			timeout(RoomCmd{Type: PlayerCardsSelectedTimeout}, time.Minute, c)
 		}
 		break
 	case PlayerReadyTimeout:
 		gameStart(room)
 		startTurn(room)
+		timeout(RoomCmd{Type: PlayerCardsSelectedTimeout}, time.Minute, c)
 		break
 	default:
 		log.Error().Interface("cmd", cmd).Msg("Received a cmd not valid during waiting phase")
@@ -298,18 +300,16 @@ func handleCmdDuringWaiting(cmd RoomCmd, room *entities.Room, c *chan RoomCmd) {
 func handleCmdDuringTurnStarted(cmd RoomCmd, room *entities.Room, c *chan RoomCmd) {
 	switch cmd.Type {
 	case PlayerCardsSelected:
-		if len(selectedCards) == 0 {
-			timeout(RoomCmd{Type: PlayerCardsSelectedTimeout}, time.Minute, c)
-		}
-
 		selectedCards[cmd.PlayerId] = cmd.Cards
 		removeUsedCards(cmd.PlayerId, cmd.Cards)
 		if len(selectedCards) >= len(room.Players) {
 			allPlayerSelectedCards(room)
+			timeout(RoomCmd{Type: PlayerRatedOtherCardsTimeout}, time.Minute, c)
 		}
 		break
 	case PlayerCardsSelectedTimeout:
 		allPlayerSelectedCards(room)
+		timeout(RoomCmd{Type: PlayerRatedOtherCardsTimeout}, time.Minute, c)
 		break
 	default:
 		log.Error().Interface("cmd", cmd).Msg("Received a cmd not valid during turn started phase")
@@ -320,10 +320,6 @@ func handleCmdDuringTurnStarted(cmd RoomCmd, room *entities.Room, c *chan RoomCm
 func handleCmdDuringReview(cmd RoomCmd, room *entities.Room, c *chan RoomCmd) {
 	switch cmd.Type {
 	case PlayerRatedOtherCards:
-		if len(playersReview) == 0 {
-			timeout(RoomCmd{Type: PlayerRatedOtherCardsTimeout}, time.Minute, c)
-		}
-
 		playersReview[cmd.PlayerId] = cmd.Reviews
 		if len(playersReview) >= len(room.Players) {
 			endTurn(room)
