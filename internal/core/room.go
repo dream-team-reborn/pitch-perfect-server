@@ -272,7 +272,7 @@ func handleCmdDuringWaiting(cmd RoomCmd, room *entities.Room, c *chan RoomCmd) {
 	switch cmd.Type {
 	case PlayerReady:
 		if len(room.PlayersReady) == 0 {
-			timeout(RoomCmd{Type: PlayerReadyTimeout}, 30*time.Second, c)
+			timeout(RoomCmd{Type: PlayerReadyTimeout}, 15*time.Second, c)
 		}
 
 		newReadyPlayers := append(room.PlayersReady, cmd.PlayerId)
@@ -288,7 +288,7 @@ func handleCmdDuringWaiting(cmd RoomCmd, room *entities.Room, c *chan RoomCmd) {
 		startTurn(room)
 		break
 	default:
-		log.Error().Msg("Received a cmd not valid during waiting phase")
+		log.Error().Interface("cmd", cmd).Msg("Received a cmd not valid during waiting phase")
 		break
 	}
 }
@@ -297,7 +297,7 @@ func handleCmdDuringTurnStarted(cmd RoomCmd, room *entities.Room, c *chan RoomCm
 	switch cmd.Type {
 	case PlayerCardsSelected:
 		if len(selectedCards) == 0 {
-			timeout(RoomCmd{Type: PlayerCardsSelectedTimeout}, 2*time.Minute, c)
+			timeout(RoomCmd{Type: PlayerCardsSelectedTimeout}, 30*time.Second, c)
 		}
 
 		selectedCards[cmd.PlayerId] = cmd.Cards
@@ -310,7 +310,7 @@ func handleCmdDuringTurnStarted(cmd RoomCmd, room *entities.Room, c *chan RoomCm
 		allPlayerSelectedCards(room)
 		break
 	default:
-		log.Error().Msg("Received a cmd not valid during turn started phase")
+		log.Error().Interface("cmd", cmd).Msg("Received a cmd not valid during turn started phase")
 		break
 	}
 }
@@ -319,7 +319,7 @@ func handleCmdDuringReview(cmd RoomCmd, room *entities.Room, c *chan RoomCmd) {
 	switch cmd.Type {
 	case PlayerRatedOtherCards:
 		if len(playersReview) == 0 {
-			timeout(RoomCmd{Type: PlayerRatedOtherCardsTimeout}, 2*time.Minute, c)
+			timeout(RoomCmd{Type: PlayerRatedOtherCardsTimeout}, 30*time.Second, c)
 		}
 
 		playersReview[cmd.PlayerId] = cmd.Reviews
@@ -331,7 +331,7 @@ func handleCmdDuringReview(cmd RoomCmd, room *entities.Room, c *chan RoomCmd) {
 		endTurn(room)
 		break
 	default:
-		log.Error().Msg("Received a cmd not valid during review phase")
+		log.Error().Interface("cmd", cmd).Msg("Received a cmd not valid during review phase")
 		break
 	}
 }
