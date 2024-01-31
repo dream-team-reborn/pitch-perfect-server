@@ -299,7 +299,7 @@ func handleCmdDuringTurnStarted(cmd RoomCmd, room *entities.Room, c *chan RoomCm
 	switch cmd.Type {
 	case PlayerCardsSelected:
 		if len(selectedCards) == 0 {
-			timeout(RoomCmd{Type: PlayerCardsSelectedTimeout}, 30*time.Second, c)
+			timeout(RoomCmd{Type: PlayerCardsSelectedTimeout}, time.Minute, c)
 		}
 
 		selectedCards[cmd.PlayerId] = cmd.Cards
@@ -321,7 +321,7 @@ func handleCmdDuringReview(cmd RoomCmd, room *entities.Room, c *chan RoomCmd) {
 	switch cmd.Type {
 	case PlayerRatedOtherCards:
 		if len(playersReview) == 0 {
-			timeout(RoomCmd{Type: PlayerRatedOtherCardsTimeout}, 30*time.Second, c)
+			timeout(RoomCmd{Type: PlayerRatedOtherCardsTimeout}, time.Minute, c)
 		}
 
 		playersReview[cmd.PlayerId] = cmd.Reviews

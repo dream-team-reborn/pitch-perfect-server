@@ -7,8 +7,6 @@ import (
 	"net/http"
 )
 
-//var addr = flag.String("addr", "0.0.0.0:8080", "api service address")
-
 func Serve() {
 	r := mux.NewRouter()
 	r.HandleFunc("/", HomeHandler)
