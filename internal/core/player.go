@@ -11,7 +11,8 @@ var playersIndex map[uuid.UUID]chan PlayerEvent
 var playersMutex sync.Mutex
 
 const (
-	RoomJoined uint = iota
+	ConnectionDown uint = iota
+	RoomJoined
 	RoomLeaved
 	GameStarted
 	TurnStarted

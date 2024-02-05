@@ -244,8 +244,10 @@ func WsHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if room != uuid.Nil {
-		core.LeaveRoom(playerId, room)
+		_ = core.LeaveRoom(playerId, room)
 	}
+
+	*eventChannel <- core.PlayerEvent{Type: core.ConnectionDown}
 
 	log.Warn().Msg("Conn destroyed")
 }
@@ -301,6 +303,8 @@ func listenEventChannel(c *chan core.PlayerEvent, socket *websocket.Conn, mt *sy
 			response["Type"] = "RoomCreated"
 			response["Room"] = event.Room
 			break
+		case core.ConnectionDown:
+			return
 		default:
 			break
 		}
@@ -316,8 +320,5 @@ func listenEventChannel(c *chan core.PlayerEvent, socket *websocket.Conn, mt *sy
 		if err != nil {
 			log.Err(err)
 		}
-
-		log.Info().Interface("output", output).Send()
-
 	}
 }

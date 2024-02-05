@@ -35,5 +35,5 @@ func Serve() {
 		},
 	}
 
-	server.ListenAndServeTLS("", "") //Key and cert are coming from Let's Encrypt
+	_ = server.ListenAndServeTLS("", "")
 }
